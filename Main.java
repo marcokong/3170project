@@ -485,7 +485,7 @@ public class Main {
 			PreparedStatement taken = conn.prepareStatement("UPDATE requests r SET r.taken = true WHERE r.id = ?;");
 			taken.setInt(1, request_id);
 			taken.executeUpdate();
-		
+		System.out.println("Trip ID, Passenger name, Start");
 		System.out.printf("%d, %s, %s\n", trip_id, resultSet.getString("name"), datetime); 
 		}
         
@@ -502,6 +502,8 @@ private static int fee_calculation(String start, String end) throws Exception { 
 		
 		long diff = end_time.getTime() - start_time.getTime();
 		long diffMinutes = diff / (60 * 1000) % 60;
+		long diffHours = diff / (60 * 60 * 1000);
+		diffMinutes = diffMinutes + (diffHours * 60);
 		int fee = (int)diffMinutes;
 		return fee;
 	}
