@@ -4,15 +4,13 @@ import java.sql.*;
 import com.opencsv.*;
 import java.text.SimpleDateFormat;  
 import java.util.Date; 
+import java.text.ParseException;
 
 public class Main {
     private static Scanner in;
     private static Connection conn;
     
-    
-    
-    
-    
+
     // Finished, not checked
     private static void task11() throws Exception { // Create tables
         task12Internal(); // Delete tables
@@ -79,7 +77,7 @@ public class Main {
 		PreparedStatement createRequests = conn.prepareStatement(
             "CREATE TABLE requests (" +
                 "id int NOT NULL," +
-                "passengers_id int NOT NULL UNIQUE," +
+                "passengers_id int NOT NULL," +
                 "start_location varchar(255) NOT NULL," +
                 "destination varchar(255) NOT NULL," +
                 "model varchar(255) NOT NULL," +
@@ -109,7 +107,7 @@ public class Main {
                 "end_time datetime," + // NULL if unfinished
                 "start_location varchar(255) NOT NULL," +
                 "destination varchar(255) NOT NULL," +
-                "fee int NOT NULL," +
+                "fee int," +
                 "PRIMARY KEY (id)," +
                 "FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE CASCADE,"+
                 "FOREIGN KEY (passenger_id) REFERENCES passengers(id) ON DELETE CASCADE,"+
@@ -260,30 +258,36 @@ public class Main {
     
     
     
-    // Not finished, not checked
+    //Finished, not checked
     private static void task14() throws Exception { // Check data
         System.out.println("Numbers of records in each table:");
         Statement stmt= conn.createStatement();
-        /*String query="SELECT COUNT(*) AS records FROM vehicles";
+        
+        String query="SELECT COUNT(*) AS records FROM vehicles";
         ResultSet rs= stmt.executeQuery(query);
         while(rs.next()){
-            System.out.println("Vehicle: "+ rs.getInt("records"));}*/
-        String query="SELECT COUNT(*) AS records FROM passengers";
-        ResultSet rs= stmt.executeQuery(query);
+            System.out.println("Vehicle: "+ rs.getInt("records"));}
+        
+        query="SELECT COUNT(*) AS records FROM passengers";
+        rs= stmt.executeQuery(query);
         while(rs.next()){
             System.out.println("Passenger: "+ rs.getInt("records"));}
+        
         query="SELECT COUNT(*) AS records FROM drivers";
         rs= stmt.executeQuery(query);
         while(rs.next()){
             System.out.println("Driver: "+ rs.getInt("records"));}
+        
         query="SELECT COUNT(*) AS records FROM trips";
         rs= stmt.executeQuery(query);
         while(rs.next()){
             System.out.println("Trip: "+ rs.getInt("records"));}
-        /*query="SELECT COUNT(*) AS records FROM requests";
+        
+        query="SELECT COUNT(*) AS records FROM requests";
         rs= stmt.executeQuery(query);
         while(rs.next()){
-            System.out.println("Request: "+ rs.getInt("records"));}*/
+            System.out.println("Request: "+ rs.getInt("records"));}
+        
         query="SELECT COUNT(*) AS records FROM taxi_stops";
         rs= stmt.executeQuery(query);
         while(rs.next()){
@@ -335,17 +339,162 @@ public class Main {
     
     
     
-    
+    //Finished, not checked
     private static void task21() throws Exception{ //request a ride
+        int id, numPass, minDrive,request_id;
+        String start_loc, destination, model="", response, usermodel;
+        boolean validlocation, valid;
         
+        do{
+            valid=true;
+            System.out.println("Please enter your ID.");
+            id= Integer.parseInt(in.nextLine());
+            PreparedStatement checkPassengerid= conn.prepareStatement("SELECT id FROM passengers P WHERE P.id=?");
+            checkPassengerid.setInt(1,id);
+            ResultSet Passidresult= checkPassengerid.executeQuery();
+            if (!Passidresult.next()){
+                System.out.println("[ERROR] Unvalid ID");
+                valid=false;
+            }
+            else {
+                PreparedStatement checkid= conn.prepareStatement("SELECT id FROM requests R WHERE R.passenger_id=? AND R.taken= 0");
+                checkid.setInt(1,id);
+                ResultSet idresult= checkid.executeQuery();
+                if (idresult.next()){
+                    System.out.println("You already got an open request. Please try again later.");
+                    valid=false;
+                }
+            }
+        }while (!valid);
+        
+        do{
+            valid=true;
+            System.out.println("Please enter the number of passengers.");
+            numPass= Integer.parseInt(in.nextLine());
+            if (numPass<1 || numPass>8){System.out.println("[ERROR] Invalid number of passengers"); valid=false;}
+        }while (!valid);
+        
+        do{
+            validlocation=true;
+            System.out.println("Please enter the start location.");
+            start_loc= in.nextLine();
+            PreparedStatement checkLocation= conn.prepareStatement("SELECT name FROM taxi_stops T WHERE T.name=?");
+            checkLocation.setString(1,start_loc);
+            ResultSet rs= checkLocation.executeQuery();
+            if (!rs.next()) {System.out.println("[Error] Start Location not found."); validlocation=false;}
+            //if (rs.next()) System.out.println(rs.getString("name")+ "   valid start location");
+            checkLocation.close();
+        } while (!validlocation);
+        
+        do{
+            validlocation=true;
+            System.out.println("Please enter the destination.");
+            destination= in.nextLine();
+            if (destination.equals(start_loc)){
+                System.out.println("[Error] Destination and start location should be different."); validlocation=false;
+            }
+            else{
+                PreparedStatement checkLocation= conn.prepareStatement("SELECT name FROM taxi_stops T WHERE T.name=?");
+                checkLocation.setString(1,destination);
+                ResultSet rs= checkLocation.executeQuery();
+                if (!rs.next()) {System.out.println("[Error] Destination not found."); validlocation=false;}
+                checkLocation.close();
+            }
+        }while (!validlocation);
+        
+        do{
+            valid=true;
+            System.out.println("Please enter the model. (Press enter to skip)");
+            response= in.nextLine();
+            usermodel=response;
+            if(response.equals("")) model="%";
+            else if(response.length()>30){
+                System.out.println("[Error] Model criterion too long.");
+                valid=false;
+            }
+            else model="%"+response.toLowerCase()+"%";
+        }while(!valid);
+            
+        System.out.println("Please enter the minimum driving years of the driver. (Press enter to skip)");
+        response= in.nextLine();
+        if(response.equals("")) minDrive=0;
+        else minDrive= Integer.parseInt(response);
+        
+        //System.out.println(id+"   "+numPass+"   "+start_loc+"   "+destination+"   "+model+"   "+minDrive);
+        
+        PreparedStatement checkAble= conn.prepareStatement(
+            "SELECT COUNT(*) AS numAble FROM vehicles V, drivers D WHERE LOWER(V.model) LIKE ? AND D.vehicle_id=V.id AND V.seats >= ? AND D.driving_years >= ?"
+        );
+        checkAble.setString(1, model);
+        checkAble.setInt(2,numPass);
+        checkAble.setInt(3,minDrive);
+        ResultSet rs= checkAble.executeQuery();
+        if (rs.next()){
+            System.out.println("Your request is placed. "+ rs.getInt("numAble")+" drivers are able to take the request");
+            PreparedStatement insertIntoRequests= conn.prepareStatement(
+                "INSERT INTO requests VALUES (?,?,?,?,?,?,false,?)"
+            );
+            Statement stmt= conn.createStatement();
+            String query="SELECT MAX(id) AS maxid FROM requests";
+            rs= stmt.executeQuery(query);
+            if(rs.next()){
+                 request_id=rs.getInt("maxid")+1;}
+            else request_id=1;
+            insertIntoRequests.setInt(1,request_id);
+            insertIntoRequests.setInt(2,id);
+            insertIntoRequests.setString(3,start_loc);
+            insertIntoRequests.setString(4,destination);
+            insertIntoRequests.setString(5,usermodel);
+            insertIntoRequests.setInt(6,numPass);
+            insertIntoRequests.setInt(7,minDrive);
+            insertIntoRequests.execute();
+            insertIntoRequests.close();
+        }
+        else{
+            System.out.println(" 0 drivers are able to take the request. Please adjust the criteria.");
+        }
     }
     
     
     
     
-    
+    //Finished, not checked
     private static void task22() throws Exception{ //check trip records
+        int id;
+        String destination, userStartDate, userEndDate;
+        SimpleDateFormat dateFormat= new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Timestamp startstamp= null,endstamp= null;
+        Date startDate,endDate;
         
+        System.out.println("Please enter your ID.");
+        id= Integer.parseInt(in.nextLine());
+        System.out.println("Please enter the start date.");
+        userStartDate=in.nextLine()+" 00:00:00";
+        System.out.println("Please enter the end date.");
+        userEndDate=in.nextLine()+" 00:00:00";
+        System.out.println("Please enter the destination.");
+        destination=in.nextLine();
+        startDate= dateFormat.parse(userStartDate);
+        startstamp= new java.sql.Timestamp(startDate.getTime());
+        endDate= dateFormat.parse(userEndDate);
+        endstamp= new java.sql.Timestamp(endDate.getTime());
+        
+        PreparedStatement checkTripRecords= conn.prepareStatement(
+            "SELECT T.id AS TID, D.name, V.id AS VID, V.model, T.start_time, T.end_time, T.fee, T.start_location, T.destination"
+            +" FROM trips T, drivers D, vehicles V WHERE T.driver_id= D.id AND D.vehicle_id= V.id AND T.passenger_id= ? "
+            +"AND T.start_time>= ? AND T.end_time <= ? AND T.destination= ?"
+        );
+        checkTripRecords.setInt(1,id);
+        checkTripRecords.setTimestamp(2,startstamp);
+        checkTripRecords.setTimestamp(3,endstamp);
+        checkTripRecords.setString(4,destination);
+        ResultSet rs= checkTripRecords.executeQuery();
+        System.out.println("Trip_id, Driver Name, Vehicle ID, Vehicle Model, Start, End, Fee, Start Location, Destination");
+        while (rs.next()){
+            int TID= rs.getInt("TID"), fee=rs.getInt("fee");
+            String driverName= rs.getString("name"), vehicleModel= rs.getString("model"), start= rs.getString("start_time"), end= rs.getString("end_time"), startLocation=rs.getString("start_location"), recordDestination= rs.getString("destination"),VID=rs.getString("VID");
+            System.out.println(TID+", "+driverName+", "+VID+", "+vehicleModel+", "+start+", "+end+", "+fee+", "+startLocation+", "+recordDestination);
+        }
     }
     
     
