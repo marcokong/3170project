@@ -32,16 +32,17 @@ public class Main {
         // vehicles
         // passengers
         PreparedStatement dropPassengers = conn.prepareStatement("DROP TABLE IF EXISTS passengers");
-        dropPassengers.execute();
-        dropPassengers.close();
-        PreparedStatement createPassengers = conn.prepareStatement("CREATE TABLE passengers (" +
-            "id int NOT NULL," +
-            "PRIMARY KEY (id)," +
-            "CONSTRAINT c_id CHECK (id > 0)" +
-        ")");
-        createPassengers.execute();
-        createPassengers.close();
-        // requests
+		dropPassengers.execute();
+		dropPassengers.close();
+		PreparedStatement createPassengers = conn.prepareStatement("CREATE TABLE passengers (" +
+			"id int NOT NULL," +
+			"name varchar(255) NOT NULL," +
+			"PRIMARY KEY (id)," +
+			"CONSTRAINT c_id CHECK (id > 0)," +
+			"CONSTRAINT c_name CHECK (name <> '' AND LEN(name) <= 30)" +
+		")");
+		createPassengers.execute();
+		createPassengers.close();
         
         // taxi_stops
         PreparedStatement dropTaxistops = conn.prepareStatement("DROP TABLE IF EXISTS taxi_stops");
@@ -57,9 +58,31 @@ public class Main {
         createTaxistops.execute();
         createTaxistops.close();
         
+        // requests
+		PreparedStatement dropRequests = conn.prepareStatement("DROP TABLE IF EXISTS requests");
+		dropRequests.execute();
+		dropRequests.close();
+		PreparedStatement createRequests = conn.prepareStatement("CREATE TABLE requests (" +
+			"id int NOT NULL," +
+			"passengers_id int NOT NULL UNIQUE," +
+			"start_location varchar(255) NOT NULL," +
+			"destination varchar(255) NOT NULL," +
+			"model varchar(255)," +
+			"passengers int NOT NULL," +
+			"taken boolean," +
+			"driving_years int," +
+			"PRIMARY KEY (id)," +
+			"FOREIGN KEY (passengers_id) REFERENCES passengers(id) ON DELETE CASCADE," +
+			"FOREIGN KEY (start_location) REFERENCES taxi_stops(name) ON DELETE CASCADE," +
+			"FOREIGN KEY (destination) REFERENCES taxi_stops(name) ON DELETE CASCADE," +
+			"CONSTRAINT c_id CHECK (id > 0)," +
+			"CONSTRAINT c_passengers CHECK (passnegers >= 1 AND passengers <=8)" +
+			//"CONSTRAINT c_locations CHECK (STRCMP(start_location, destination) != 0)" +
+		")");
+		createRequests.execute();
+		createRequests.close();
+        
         // trips
-        
-        
         PreparedStatement createTrips = conn.prepareStatement("CREATE TABLE trips (" +
             "id int NOT NULL," +
             "driver_id int NOT NULL," +
@@ -84,6 +107,26 @@ public class Main {
     }
     
     private static void task12() throws Exception { // Delete tables
+        PreparedStatement dropTrips = conn.prepareStatement("DROP TABLE IF EXISTS trips");
+        dropTrips.execute();
+        dropTrips.close();
+		PreparedStatement dropRequests = conn.prepareStatement("DROP TABLE IF EXISTS requests");
+		dropRequests.execute();
+		dropRequests.close();
+		PreparedStatement dropDrivers = conn.prepareStatement("DROP TABLE IF EXISTS drivers");
+        dropDrivers.execute();
+        dropDrivers.close();
+		PreparedStatement dropVehicles = conn.prepareStatement("DROP TABLE IF EXISTS vehicles");
+		dropVehicles.execute();
+		dropVehicles.close();
+		PreparedStatement dropPassengers = conn.prepareStatement("DROP TABLE IF EXISTS passengers");
+		dropPassengers.execute();
+		dropPassengers.close();
+		PreparedStatement dropTaxistops = conn.prepareStatement("DROP TABLE IF EXISTS taxi_stops");
+        dropTaxistops.execute();
+        dropTaxistops.close();
+		
+		System.out.println("Processing...Done! Tables are deleted");
     }
 
     private static void task13() throws Exception { // Load data
@@ -112,9 +155,22 @@ public class Main {
         }
         
         // vehicles
-        // passengers
-        // taxi_stops
         
+        // passengers
+        path = "./" + folder + "/passengers.csv";
+        csvReader = new CSVReader(new FileReader(path));
+		while ((row = csvReader.readNext()) != null) {
+            PreparedStatement insertIntoPassengers = conn.prepareStatement(
+                "INSERT INTO passengers VALUES (?, ?)"
+            );
+			
+			insertIntoPassengers.setInt(1, Integer.parseInt(row[0]));
+			insertIntoPassengers.setString(2, row[1]);
+			insertIntoPassengers.execute();
+			insertIntoPassengers.close();
+		}
+        
+        // taxi_stops
         path = "./" + folder + "/taxi_stops.csv";
         csvReader = new CSVReader(new FileReader(path));
         while ((row = csvReader.readNext()) != null){
