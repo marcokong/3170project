@@ -7,106 +7,128 @@ public class Main {
     private static Scanner in;
     private static Connection conn;
     
+    
+    
+    
+    
+    // Finished, not checked
     private static void task11() throws Exception { // Create tables
+        task12Internal(); // Delete tables
+        
+        // vehicles
+        PreparedStatement createVehicles = conn.prepareStatement(
+            "CREATE TABLE vehicles (" +
+                "id varchar(255) NOT NULL," +
+                "model varchar(255) NOT NULL," +
+                "seats varchar(255) NOT NULL," +
+                "PRIMARY KEY (id)," +
+                "CONSTRAINT c_id CHECK (LEN(id) = 6)," +
+                "CONSTRAINT c_model CHECK (model <> '' AND LEN(model) <= 30)," +
+                "CONSTRAINT c_seats CHECK (seats >= 3 AND seats <= 7)" +
+            ")"
+        );
+        createVehicles.execute();
+        createVehicles.close();
+    
         // drivers
-        PreparedStatement dropTrips = conn.prepareStatement("DROP TABLE IF EXISTS trips");
-        dropTrips.execute();
-        dropTrips.close();
-        PreparedStatement dropDrivers = conn.prepareStatement("DROP TABLE IF EXISTS drivers");
-        dropDrivers.execute();
-        dropDrivers.close();
-        PreparedStatement createDrivers = conn.prepareStatement("CREATE TABLE drivers (" +
-            "id int NOT NULL," +
-            "name varchar(255) NOT NULL," +
-            "vehicle_id varchar(255) NOT NULL," +
-            "driving_years int NOT NULL," +
-            "PRIMARY KEY (id)," +
-            "CONSTRAINT c_id CHECK (id > 0)," +
-            "CONSTRAINT c_name CHECK (name <> '' AND LEN(name) <= 30)," +
-            "CONSTRAINT c_vehicle_id CHECK (LEN(driving_years) = 6)," +
-            "CONSTRAINT c_driving_years CHECK (driving_years > 0)" +
-        ")");
+        PreparedStatement createDrivers = conn.prepareStatement(
+            "CREATE TABLE drivers (" +
+                "id int NOT NULL," +
+                "name varchar(255) NOT NULL," +
+                "vehicle_id varchar(255) NOT NULL UNIQUE," +
+                "driving_years int NOT NULL," +
+                "PRIMARY KEY (id)," +
+                "FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE CASCADE," +
+                "CONSTRAINT c_id CHECK (id > 0)," +
+                "CONSTRAINT c_name CHECK (name <> '' AND LEN(name) <= 30)," +
+                "CONSTRAINT c_driving_years CHECK (driving_years >= 0)" +
+            ")"
+        );
         createDrivers.execute();
         createDrivers.close();
         
-        // vehicles
         // passengers
-        PreparedStatement dropPassengers = conn.prepareStatement("DROP TABLE IF EXISTS passengers");
-		dropPassengers.execute();
-		dropPassengers.close();
-		PreparedStatement createPassengers = conn.prepareStatement("CREATE TABLE passengers (" +
-			"id int NOT NULL," +
-			"name varchar(255) NOT NULL," +
-			"PRIMARY KEY (id)," +
-			"CONSTRAINT c_id CHECK (id > 0)," +
-			"CONSTRAINT c_name CHECK (name <> '' AND LEN(name) <= 30)" +
-		")");
+		PreparedStatement createPassengers = conn.prepareStatement(
+            "CREATE TABLE passengers (" +
+                "id int NOT NULL," +
+                "name varchar(255) NOT NULL," +
+                "PRIMARY KEY (id)," +
+                "CONSTRAINT c_id CHECK (id > 0)," +
+                "CONSTRAINT c_name CHECK (name <> '' AND LEN(name) <= 30)" +
+            ")"
+        );
 		createPassengers.execute();
 		createPassengers.close();
         
         // taxi_stops
-        PreparedStatement dropTaxistops = conn.prepareStatement("DROP TABLE IF EXISTS taxi_stops");
-        dropTaxistops.execute();
-        dropTaxistops.close();
-        PreparedStatement createTaxistops = conn.prepareStatement("CREATE TABLE taxi_stops (" +
-            "name varchar(255) NOT NULL," +
-            "location_x int NOT NULL," +
-            "location_y int NOT NULL," +
-            "PRIMARY KEY (name)," +
-            "CONSTRAINT c_name CHECK (name <> '' AND LEN(name) <= 20)" +
-        ")");
+        PreparedStatement createTaxistops = conn.prepareStatement(
+            "CREATE TABLE taxi_stops (" +
+                "name varchar(255) NOT NULL," +
+                "location_x int NOT NULL," +
+                "location_y int NOT NULL," +
+                "PRIMARY KEY (name)," +
+                "CONSTRAINT c_name CHECK (name <> '' AND LEN(name) <= 20)" +
+            ")"
+        );
         createTaxistops.execute();
         createTaxistops.close();
         
         // requests
-		PreparedStatement dropRequests = conn.prepareStatement("DROP TABLE IF EXISTS requests");
-		dropRequests.execute();
-		dropRequests.close();
-		PreparedStatement createRequests = conn.prepareStatement("CREATE TABLE requests (" +
-			"id int NOT NULL," +
-			"passengers_id int NOT NULL UNIQUE," +
-			"start_location varchar(255) NOT NULL," +
-			"destination varchar(255) NOT NULL," +
-			"model varchar(255)," +
-			"passengers int NOT NULL," +
-			"taken boolean," +
-			"driving_years int," +
-			"PRIMARY KEY (id)," +
-			"FOREIGN KEY (passengers_id) REFERENCES passengers(id) ON DELETE CASCADE," +
-			"FOREIGN KEY (start_location) REFERENCES taxi_stops(name) ON DELETE CASCADE," +
-			"FOREIGN KEY (destination) REFERENCES taxi_stops(name) ON DELETE CASCADE," +
-			"CONSTRAINT c_id CHECK (id > 0)," +
-			"CONSTRAINT c_passengers CHECK (passnegers >= 1 AND passengers <=8)" +
-			//"CONSTRAINT c_locations CHECK (STRCMP(start_location, destination) != 0)" +
-		")");
+		PreparedStatement createRequests = conn.prepareStatement(
+            "CREATE TABLE requests (" +
+                "id int NOT NULL," +
+                "passengers_id int NOT NULL UNIQUE," +
+                "start_location varchar(255) NOT NULL," +
+                "destination varchar(255) NOT NULL," +
+                "model varchar(255) NOT NULL," +
+                "passengers int NOT NULL," +
+                "taken boolean NOT NULL," +
+                "driving_years int NOT NULL," +
+                "PRIMARY KEY (id)," +
+                "FOREIGN KEY (passengers_id) REFERENCES passengers(id) ON DELETE CASCADE," +
+                "FOREIGN KEY (start_location) REFERENCES taxi_stops(name) ON DELETE CASCADE," +
+                "FOREIGN KEY (destination) REFERENCES taxi_stops(name) ON DELETE CASCADE," +
+                "CONSTRAINT c_id CHECK (id > 0)," +
+                "CONSTRAINT c_passengers CHECK (passnegers >= 1 AND passengers <=8)," +
+                "CONSTRAINT c_model CHECK (LEN(model) <= 30)," +
+                "CONSTRAINT c_locations CHECK (start_location <> destination)" +
+            ")"
+        );
 		createRequests.execute();
 		createRequests.close();
         
         // trips
-        PreparedStatement createTrips = conn.prepareStatement("CREATE TABLE trips (" +
-            "id int NOT NULL," +
-            "driver_id int NOT NULL," +
-            "passenger_id int NOT NULL," +
-            "start_time datetime NOT NULL," +
-            "end_time datetime NOT NULL," +
-            "start_location varchar(255) NOT NULL," +
-            "destination varchar(255) NOT NULL," +
-            "fee int NOT NULL," +
-            "PRIMARY KEY (id)," +
-            "FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE CASCADE,"+
-            "FOREIGN KEY (passenger_id) REFERENCES passengers(id) ON DELETE CASCADE,"+
-            "FOREIGN KEY (start_location) REFERENCES taxi_stops(name) ON DELETE CASCADE,"+
-            "FOREIGN KEY (destination) REFERENCES taxi_stops(name) ON DELETE CASCADE,"+
-            "CONSTRAINT c_id CHECK (id > 0)," +
-            "CONSTRAINT c_fee CHECK (fee > 0)" +
-        ")");
+        PreparedStatement createTrips = conn.prepareStatement(
+            "CREATE TABLE trips (" +
+                "id int NOT NULL," +
+                "driver_id int NOT NULL," +
+                "passenger_id int NOT NULL," +
+                "start_time datetime NOT NULL," +
+                "end_time datetime," + // NULL if unfinished
+                "start_location varchar(255) NOT NULL," +
+                "destination varchar(255) NOT NULL," +
+                "fee int NOT NULL," +
+                "PRIMARY KEY (id)," +
+                "FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE CASCADE,"+
+                "FOREIGN KEY (passenger_id) REFERENCES passengers(id) ON DELETE CASCADE,"+
+                "FOREIGN KEY (start_location) REFERENCES taxi_stops(name) ON DELETE CASCADE,"+
+                "FOREIGN KEY (destination) REFERENCES taxi_stops(name) ON DELETE CASCADE,"+
+                "CONSTRAINT c_id CHECK (id > 0)," +
+                "CONSTRAINT c_fee CHECK (fee > 0)" +
+            ")"
+        );
         createTrips.execute();
         createTrips.close();
         
         System.out.println("Processing...Done! Tables are created!");
     }
     
-    private static void task12() throws Exception { // Delete tables
+    
+    
+    
+    
+    // Finished, checked
+    private static void task12Internal() throws Exception {
         PreparedStatement dropTrips = conn.prepareStatement("DROP TABLE IF EXISTS trips");
         dropTrips.execute();
         dropTrips.close();
@@ -125,16 +147,44 @@ public class Main {
 		PreparedStatement dropTaxistops = conn.prepareStatement("DROP TABLE IF EXISTS taxi_stops");
         dropTaxistops.execute();
         dropTaxistops.close();
-		
+    }
+    
+    
+    
+    
+    
+    // Finished, checked
+    private static void task12() throws Exception { // Delete tables
+		task12Internal();
 		System.out.println("Processing...Done! Tables are deleted");
     }
 
+    
+    
+    
+    
+    // Finished, not checked
     private static void task13() throws Exception { // Load data
         System.out.println("Please enter the folder path");
         String folder = in.nextLine();
         String path;
         CSVReader csvReader;
         String[] row;
+        
+        // vehicles
+        path = "./" + folder + "/vehicles.csv";
+        csvReader = new CSVReader(new FileReader(path));
+        while ((row = csvReader.readNext()) != null) {
+            PreparedStatement insertIntoVehicles = conn.prepareStatement(
+                "INSERT INTO vehicles VALUES (?, ?, ?)"
+            );
+            
+            insertIntoVehicles.setString(1, row[0]);
+            insertIntoVehicles.setString(2, row[1]);
+            insertIntoVehicles.setString(3, row[2]);
+            insertIntoVehicles.execute();
+            insertIntoVehicles.close();
+        }
     
         // drivers
         path = "./" + folder + "/drivers.csv";
@@ -144,8 +194,6 @@ public class Main {
                 "INSERT INTO drivers VALUES (?, ?, ?, ?)"
             );
             
-            // System.out.println(row[0] + " " + row[1] + " " + row[2] + " " + row[3]);
-            
             insertIntoDrivers.setInt(1, Integer.parseInt(row[0]));
             insertIntoDrivers.setString(2, row[1]);
             insertIntoDrivers.setString(3, row[2]);
@@ -153,8 +201,6 @@ public class Main {
             insertIntoDrivers.execute();
             insertIntoDrivers.close();
         }
-        
-        // vehicles
         
         // passengers
         path = "./" + folder + "/passengers.csv";
@@ -186,14 +232,13 @@ public class Main {
         }
         
         // trips
-        /*
         path = "./" + folder + "/trips.csv";
         csvReader = new CSVReader(new FileReader(path));
         while ((row = csvReader.readNext()) != null){
             PreparedStatement insertIntoTrips = conn.prepareStatement(
                 "INSERT INTO trips VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
             );
-
+            
             insertIntoTrips.setInt(1, Integer.parseInt(row[0]));
             insertIntoTrips.setInt(2, Integer.parseInt(row[1]));
             insertIntoTrips.setInt(3, Integer.parseInt(row[2]));
@@ -204,10 +249,16 @@ public class Main {
             insertIntoTrips.setInt(8, Integer.parseInt(row[7]));
             insertIntoTrips.execute();
             insertIntoTrips.close();
-        }*/
+        }
+        
         System.out.println("Processing...Data is loaded!");
     }
     
+    
+    
+    
+    
+    // Not finished, not checked
     private static void task14() throws Exception { // Check data
         System.out.println("Numbers of records in each table:");
         Statement stmt= conn.createStatement();
@@ -237,6 +288,11 @@ public class Main {
             System.out.println("Taxi_stop: "+ rs.getInt("records"));}
     }
 
+    
+    
+    
+    
+    // Finished, not checked
     private static void task1() throws Exception { // System Administrator
         while (true) {
             System.out.println("Administrator, what would you like to do?");
@@ -257,6 +313,11 @@ public class Main {
         }
     }
     
+    
+    
+    
+    
+    // Finished, not checked
     private static void task2() throws Exception { // Passenger
         while (true){
             System.out.println("Passanger, what would you like to do? \n1. Request a ride\n2. Check trip records\n3. Go back\nPlease enter [1-3]");
@@ -269,14 +330,27 @@ public class Main {
         }
     }
     
+    
+    
+    
+    
     private static void task21() throws Exception{ //request a ride
         
     }
+    
+    
+    
+    
     
     private static void task22() throws Exception{ //check trip records
         
     }
     
+    
+    
+    
+    
+    // Finished, not checked
     private static void task3() throws Exception { // Driver
         while(true){
             System.out.println("Driver, what would you like to do? \n1. Search requests\n2. Take a request\n3. Finish a trip\n4. Go back\nPlease enter [1-4]");
@@ -290,18 +364,35 @@ public class Main {
         }
     }
     
+    
+    
+    
+    
     private static void task31() throws Exception{ //search requests
         
     }
+    
+    
+    
+    
     
     private static void task32() throws Exception{ //take a request
         
     }
     
+    
+    
+    
+    
     private static void task33() throws Exception{ //finish a trip
         
     }
     
+    
+    
+    
+    
+    // Finished, not checked
     private static void task4() throws Exception { // Manager
         while(true){
             System.out.println("Manager, what would you like to do? \n1. Find trips\n2. Go back\nPlease enter [1-2]");
@@ -309,13 +400,23 @@ public class Main {
             String response = in.nextLine();
             if (response.equals("1")) task41();
             else if (response.equals("2")) break;
+            // else invalid
         }
     }
+    
+    
+    
+    
     
     private static void task41() throws Exception{ //list all finished trips with travelling distances within a range
         
     }
     
+    
+    
+    
+    
+    // Finished, not checked
     private static void ask() throws Exception {
         while (true) {
             System.out.println("Welcome! Who are you?");
@@ -336,6 +437,10 @@ public class Main {
         }
     }
 
+    
+    
+    
+    
     public static void main(String[] args) {
         try {
             in = new Scanner(System.in);
