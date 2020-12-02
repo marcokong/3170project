@@ -8,10 +8,10 @@ public class Main {
     private static Connection conn;
     
     private static void task11() throws Exception { // Create tables
-        // drivers
-        PreparedStatement dropTrips = conn.prepareStatement("DROP TABLE IF EXISTS trips");
+		PreparedStatement dropTrips = conn.prepareStatement("DROP TABLE IF EXISTS trips");
         dropTrips.execute();
         dropTrips.close();
+        // drivers
         PreparedStatement dropDrivers = conn.prepareStatement("DROP TABLE IF EXISTS drivers");
         dropDrivers.execute();
         dropDrivers.close();
@@ -30,21 +30,28 @@ public class Main {
         createDrivers.close();
         
         // vehicles
+		
+		
+		
+		
         // passengers
-        PreparedStatement dropPassengers = conn.prepareStatement("DROP TABLE IF EXISTS passengers");
-        dropPassengers.execute();
-        dropPassengers.close();
-        PreparedStatement createPassengers = conn.prepareStatement("CREATE TABLE passengers (" +
-            "id int NOT NULL," +
-            "PRIMARY KEY (id)," +
-            "CONSTRAINT c_id CHECK (id > 0)" +
-        ")");
-        createPassengers.execute();
-        createPassengers.close();
-        // requests
-        
+		PreparedStatement dropPassengers = conn.prepareStatement("DROP TABLE IF EXISTS passengers");
+		dropPassengers.execute();
+		dropPassengers.close();
+		PreparedStatement createPassengers = conn.prepareStatement("CREATE TABLE passengers (" +
+			"id int NOT NULL," +
+			"name varchar(255) NOT NULL," +
+			"PRIMARY KEY (id)," +
+			"CONSTRAINT c_id CHECK (id > 0)," +
+			"CONSTRAINT c_name CHECK (name <> '' AND LEN(name) <= 30)" +
+		")");
+		createPassengers.execute();
+		createPassengers.close();
+		
+ 
+		
         // taxi_stops
-        PreparedStatement dropTaxistops = conn.prepareStatement("DROP TABLE IF EXISTS taxi_stops");
+		PreparedStatement dropTaxistops = conn.prepareStatement("DROP TABLE IF EXISTS taxi_stops");
         dropTaxistops.execute();
         dropTaxistops.close();
         PreparedStatement createTaxistops = conn.prepareStatement("CREATE TABLE taxi_stops (" +
@@ -56,11 +63,33 @@ public class Main {
         ")");
         createTaxistops.execute();
         createTaxistops.close();
-        
-        // trips
-        
-        
-        PreparedStatement createTrips = conn.prepareStatement("CREATE TABLE trips (" +
+		
+		// requests
+		PreparedStatement dropRequests = conn.prepareStatement("DROP TABLE IF EXISTS requests");
+		dropRequests.execute();
+		dropRequests.close();
+		PreparedStatement createRequests = conn.prepareStatement("CREATE TABLE requests (" +
+			"id int NOT NULL," +
+			"passengers_id int NOT NULL UNIQUE," +
+			"start_location varchar(255) NOT NULL," +
+			"destination varchar(255) NOT NULL," +
+			"model varchar(255)," +
+			"passengers int NOT NULL," +
+			"taken boolean," +
+			"driving_years int," +
+			"PRIMARY KEY (id)," +
+			"FOREIGN KEY (passengers_id) REFERENCES passengers(id) ON DELETE CASCADE," +
+			"FOREIGN KEY (start_location) REFERENCES taxi_stops(name) ON DELETE CASCADE," +
+			"FOREIGN KEY (destination) REFERENCES taxi_stops(name) ON DELETE CASCADE," +
+			"CONSTRAINT c_id CHECK (id > 0)," +
+			"CONSTRAINT c_passengers CHECK (passnegers >= 1 AND passengers <=8)" +
+			//"CONSTRAINT c_locations CHECK (STRCMP(start_location, destination) != 0)" +
+		")");
+		createRequests.execute();
+		createRequests.close();
+		
+		// trips
+		PreparedStatement createTrips = conn.prepareStatement("CREATE TABLE trips (" +
             "id int NOT NULL," +
             "driver_id int NOT NULL," +
             "passenger_id int NOT NULL," +
@@ -84,6 +113,28 @@ public class Main {
     }
     
     private static void task12() throws Exception { // Delete tables
+		PreparedStatement dropTrips = conn.prepareStatement("DROP TABLE IF EXISTS trips");
+        dropTrips.execute();
+        dropTrips.close();
+		PreparedStatement dropRequests = conn.prepareStatement("DROP TABLE IF EXISTS requests");
+		dropRequests.execute();
+		dropRequests.close();
+		PreparedStatement dropDrivers = conn.prepareStatement("DROP TABLE IF EXISTS drivers");
+        dropDrivers.execute();
+        dropDrivers.close();
+		PreparedStatement dropVehicles = conn.prepareStatement("DROP TABLE IF EXISTS vehicles");
+		dropVehicles.execute();
+		dropVehicles.close();
+		PreparedStatement dropPassengers = conn.prepareStatement("DROP TABLE IF EXISTS passengers");
+		dropPassengers.execute();
+		dropPassengers.close();
+		PreparedStatement dropTaxistops = conn.prepareStatement("DROP TABLE IF EXISTS taxi_stops");
+        dropTaxistops.execute();
+        dropTaxistops.close();
+		
+		System.out.println("Processing...Done! Tables are deleted");
+		
+		
     }
 
     private static void task13() throws Exception { // Load data
@@ -112,10 +163,31 @@ public class Main {
         }
         
         // vehicles
+		
+		
+		
         // passengers
+		path = "./" + folder + "/passengers.csv";
+        csvReader = new CSVReader(new FileReader(path));
+		while ((row = csvReader.readNext()) != null) {
+            PreparedStatement insertIntoPassengers = conn.prepareStatement(
+                "INSERT INTO passengers VALUES (?, ?)"
+            );
+			
+			insertIntoPassengers.setInt(1, Integer.parseInt(row[0]));
+			insertIntoPassengers.setString(2, row[1]);
+			insertIntoPassengers.execute();
+			insertIntoPassengers.close();
+		}
+		
+		
+		
+        // trips
+		
+		
+		
         // taxi_stops
-        
-        path = "./" + folder + "/taxi_stops.csv";
+		path = "./" + folder + "/taxi_stops.csv";
         csvReader = new CSVReader(new FileReader(path));
         while ((row = csvReader.readNext()) != null){
             PreparedStatement insertIntoTaxistops = conn.prepareStatement(
@@ -128,32 +200,12 @@ public class Main {
             insertIntoTaxistops.execute();
             insertIntoTaxistops.close();
         }
-        
-        // trips
-        /*
-        path = "./" + folder + "/trips.csv";
-        csvReader = new CSVReader(new FileReader(path));
-        while ((row = csvReader.readNext()) != null){
-            PreparedStatement insertIntoTrips = conn.prepareStatement(
-                "INSERT INTO trips VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-            );
-
-            insertIntoTrips.setInt(1, Integer.parseInt(row[0]));
-            insertIntoTrips.setInt(2, Integer.parseInt(row[1]));
-            insertIntoTrips.setInt(3, Integer.parseInt(row[2]));
-            insertIntoTrips.setTimestamp(4, java.sql.Timestamp.valueOf(row[3]));
-            insertIntoTrips.setTimestamp(5, java.sql.Timestamp.valueOf(row[4]));
-            insertIntoTrips.setString(6, row[5]);
-            insertIntoTrips.setString(7, row[6]);
-            insertIntoTrips.setInt(8, Integer.parseInt(row[7]));
-            insertIntoTrips.execute();
-            insertIntoTrips.close();
-        }*/
-        System.out.println("Processing...Data is loaded!");
+		
+		System.out.println("Processing...Data is loaded!");
     }
     
     private static void task14() throws Exception { // Check data
-        System.out.println("Numbers of records in each table:");
+		System.out.println("Numbers of records in each table:");
         Statement stmt= conn.createStatement();
         /*String query="SELECT COUNT(*) AS records FROM vehicles";
         ResultSet rs= stmt.executeQuery(query);
