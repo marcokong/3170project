@@ -476,9 +476,24 @@ public class Main {
     
     // Finished, not checked, todo ERROR check
     private static void task31() throws Exception{ //search requests
-        System.out.println("Please enter your ID.");
-        String response = inNextLine();
-        int driver_id = Integer.parseInt(response);
+		boolean valid = false;
+		int driver_id;
+        do{
+            valid=true;
+            System.out.println("Please enter your ID.");
+            try {
+                driver_id= Integer.parseInt(inNextLine());
+            } catch (Exception e) {
+                driver_id = -1;
+            }
+            PreparedStatement checkDriverid= conn.prepareStatement("SELECT id FROM drivers d WHERE d.id=?");
+            checkDriverid.setInt(1, driver_id);
+            ResultSet Passidresult= checkDriverid.executeQuery();
+            if (!Passidresult.next()){
+                System.out.println("[ERROR] Invalid ID.");
+                valid=false;
+            }
+		}while (!valid);
         
         System.out.println("Please enter the coordinates of your location.");
         String[] coordinates = inNextLine().split(" ");
@@ -486,7 +501,7 @@ public class Main {
         int y_coordinate = Integer.parseInt(coordinates[1]);
         
         System.out.println("Please enter the maximum distance from you to the passenger.");
-        response = inNextLine();
+        String response = inNextLine();
         int max_distance = Integer.parseInt(response);
         
         String query = "SELECT r.id, p.name, r.passengers, r.start_location, r.destination " +
@@ -506,7 +521,7 @@ public class Main {
         System.out.println("request ID, passenger name, num of passengers, start location, destination");
         
         if(!resultSet.isBeforeFirst())
-            System.out.println("No requests found.");
+            System.out.println("[ERROR] No requests found.");
         else
             while(resultSet.next()){
                 System.out.printf("%d, ", resultSet.getInt(1));
@@ -524,12 +539,27 @@ public class Main {
     
     // Finished, not check, todo ERROR check
     private static void task32() throws Exception{ //take a request
-        System.out.println("Please enter your ID.");
-        String response = inNextLine();
-        int driver_id = Integer.parseInt(response);
+        boolean valid = false;
+		int driver_id;
+        do{
+            valid=true;
+            System.out.println("Please enter your ID.");
+            try {
+                driver_id= Integer.parseInt(inNextLine());
+            } catch (Exception e) {
+                driver_id = -1;
+            }
+            PreparedStatement checkDriverid= conn.prepareStatement("SELECT id FROM drivers d WHERE d.id=?");
+            checkDriverid.setInt(1, driver_id);
+            ResultSet Passidresult= checkDriverid.executeQuery();
+            if (!Passidresult.next()){
+                System.out.println("[ERROR] Invalid ID.");
+                valid=false;
+            }
+		}while (!valid);
         
         System.out.println("Please enter the request ID.");
-        response = inNextLine();
+        String response = inNextLine();
         int request_id = Integer.parseInt(response);
         
         String checkTrip = "SELECT * FROM trips t " +
@@ -623,9 +653,24 @@ public class Main {
     
     // Finished, not check, todo ERROR check
     private static void task33() throws Exception{ //finish a trip
-        System.out.println("Please enter your ID.");
-        String response = inNextLine();
-        int driver_id = Integer.parseInt(response);
+        boolean valid = false;
+		int driver_id;
+        do{
+            valid=true;
+            System.out.println("Please enter your ID.");
+            try {
+                driver_id= Integer.parseInt(inNextLine());
+            } catch (Exception e) {
+                driver_id = -1;
+            }
+            PreparedStatement checkDriverid= conn.prepareStatement("SELECT id FROM drivers d WHERE d.id=?");
+            checkDriverid.setInt(1, driver_id);
+            ResultSet Passidresult= checkDriverid.executeQuery();
+            if (!Passidresult.next()){
+                System.out.println("[ERROR] Invalid ID.");
+                valid=false;
+            }
+		}while (!valid);
         
         String unfinished_trip = "SELECT t.id, t.passenger_id, t.start_time, p.name " +
                                  "FROM trips t, passengers p " +
@@ -644,7 +689,7 @@ public class Main {
         System.out.println("Trip ID, Passenger ID, Start");
         System.out.printf("%d, %d, %s\n", trip_id, passenger_id, start_time);
         System.out.println("Do you wish to finish the trip? [y/n]");
-        response = inNextLine();
+        String response = inNextLine();
         if(response.equals("y")){
             PreparedStatement time = conn.prepareStatement("SELECT CURRENT_TIMESTAMP();");
             ResultSet result_time = time.executeQuery();
