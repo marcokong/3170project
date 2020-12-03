@@ -8,7 +8,7 @@ import java.nio.*;
 import java.lang.*;
 
 public class Main {
-    private static Scanner in;
+    private static Scanner in2;
     private static Connection conn;
     
     
@@ -170,7 +170,7 @@ public class Main {
     // Finished, not checked
     private static void task13() throws Exception { // Load data
         System.out.println("Please enter the folder path");
-        String folder = in.nextLine();
+        String folder = inNextLine();
         
         String[] tables = {
             "vehicles", "drivers", "passengers", "taxi_stops", "trips" 
@@ -247,7 +247,7 @@ public class Main {
             System.out.println("5. Go back");
             System.out.println("Please enter [1-5]");
             
-            String response = in.nextLine();
+            String response = inNextLine();
             if (response.equals("1")) task11();
             else if (response.equals("2")) task12();
             else if (response.equals("3")) task13();
@@ -266,7 +266,7 @@ public class Main {
         while (true){
             System.out.println("Passanger, what would you like to do? \n1. Request a ride\n2. Check trip records\n3. Go back\nPlease enter [1-3]");
             
-            String response = in.nextLine();
+            String response = inNextLine();
             if (response.equals("1")) task21();
             else if (response.equals("2")) task22();
             else if (response.equals("3")) break;
@@ -286,7 +286,7 @@ public class Main {
         do{
             valid=true;
             System.out.println("Please enter your ID.");
-            id= Integer.parseInt(in.nextLine());
+            id= Integer.parseInt(inNextLine());
             PreparedStatement checkPassengerid= conn.prepareStatement("SELECT id FROM passengers P WHERE P.id=?");
             checkPassengerid.setInt(1,id);
             ResultSet Passidresult= checkPassengerid.executeQuery();
@@ -308,14 +308,14 @@ public class Main {
         do{
             valid=true;
             System.out.println("Please enter the number of passengers.");
-            numPass= Integer.parseInt(in.nextLine());
+            numPass= Integer.parseInt(inNextLine());
             if (numPass<1 || numPass>8){System.out.println("[ERROR] Invalid number of passengers"); valid=false;}
         }while (!valid);
         
         do{
             validlocation=true;
             System.out.println("Please enter the start location.");
-            start_loc= in.nextLine();
+            start_loc= inNextLine();
             PreparedStatement checkLocation= conn.prepareStatement("SELECT name FROM taxi_stops T WHERE T.name=?");
             checkLocation.setString(1,start_loc);
             ResultSet rs= checkLocation.executeQuery();
@@ -327,7 +327,7 @@ public class Main {
         do{
             validlocation=true;
             System.out.println("Please enter the destination.");
-            destination= in.nextLine();
+            destination= inNextLine();
             if (destination.equals(start_loc)){
                 System.out.println("[Error] Destination and start location should be different."); validlocation=false;
             }
@@ -343,7 +343,7 @@ public class Main {
         do{
             valid=true;
             System.out.println("Please enter the model. (Press enter to skip)");
-            response= in.nextLine();
+            response= inNextLine();
             usermodel=response;
             if(response.equals("")) model="%";
             else if(response.length()>30){
@@ -354,7 +354,7 @@ public class Main {
         }while(!valid);
             
         System.out.println("Please enter the minimum driving years of the driver. (Press enter to skip)");
-        response= in.nextLine();
+        response= inNextLine();
         if(response.equals("")) minDrive=0;
         else minDrive= Integer.parseInt(response);
         
@@ -405,13 +405,13 @@ public class Main {
         Date startDate,endDate;
         
         System.out.println("Please enter your ID.");
-        id= Integer.parseInt(in.nextLine());
+        id= Integer.parseInt(inNextLine());
         System.out.println("Please enter the start date.");
-        userStartDate=in.nextLine()+" 00:00:00";
+        userStartDate=inNextLine()+" 00:00:00";
         System.out.println("Please enter the end date.");
-        userEndDate=in.nextLine()+" 00:00:00";
+        userEndDate=inNextLine()+" 00:00:00";
         System.out.println("Please enter the destination.");
-        destination=in.nextLine();
+        destination=inNextLine();
         startDate= dateFormat.parse(userStartDate);
         startstamp= new java.sql.Timestamp(startDate.getTime());
         endDate= dateFormat.parse(userEndDate);
@@ -444,7 +444,7 @@ public class Main {
         while(true){
             System.out.println("Driver, what would you like to do? \n1. Search requests\n2. Take a request\n3. Finish a trip\n4. Go back\nPlease enter [1-4]");
             
-            String response = in.nextLine();
+            String response = inNextLine();
             if (response.equals("1")) task31();
             else if (response.equals("2")) task32();
             else if (response.equals("3")) task33();
@@ -459,16 +459,16 @@ public class Main {
     
     private static void task31() throws Exception{ //search requests
         System.out.println("Please enter your ID.");
-        String response = in.nextLine();
+        String response = inNextLine();
         int driver_id = Integer.parseInt(response);
         
         System.out.println("Please enter the coordinates of your location.");
-        String[] coordinates = in.nextLine().split(" ");
+        String[] coordinates = inNextLine().split(" ");
         int x_coordinate = Integer.parseInt(coordinates[0]);
         int y_coordinate = Integer.parseInt(coordinates[1]);
         
         System.out.println("Please enter the maximum distance from you to the passenger.");
-        response = in.nextLine();
+        response = inNextLine();
         int max_distance = Integer.parseInt(response);
         
         String query = "SELECT r.id, p.name, r.passengers, r.start_location, r.destination " +
@@ -506,11 +506,11 @@ public class Main {
     
     private static void task32() throws Exception{ //take a request
         System.out.println("Please enter your ID.");
-        String response = in.nextLine();
+        String response = inNextLine();
         int driver_id = Integer.parseInt(response);
         
         System.out.println("Please enter the request ID.");
-        response = in.nextLine();
+        response = inNextLine();
         int request_id = Integer.parseInt(response);
         
         String checkTrip = "SELECT * FROM trips t " +
@@ -604,7 +604,7 @@ public class Main {
     
     private static void task33() throws Exception{ //finish a trip
         System.out.println("Please enter your ID.");
-        String response = in.nextLine();
+        String response = inNextLine();
         int driver_id = Integer.parseInt(response);
         
         String unfinished_trip = "SELECT t.id, t.passenger_id, t.start_time, p.name " +
@@ -624,7 +624,7 @@ public class Main {
         System.out.println("Trip ID, Passenger ID, Start");
         System.out.printf("%d, %d, %s\n", trip_id, passenger_id, start_time);
         System.out.println("Do you wish to finish the trip? [y/n]");
-        response = in.nextLine();
+        response = inNextLine();
         if(response.equals("y")){
             PreparedStatement time = conn.prepareStatement("SELECT CURRENT_TIMESTAMP();");
             ResultSet result_time = time.executeQuery();
@@ -657,7 +657,7 @@ public class Main {
         while(true){
             System.out.println("Manager, what would you like to do? \n1. Find trips\n2. Go back\nPlease enter [1-2]");
             
-            String response = in.nextLine();
+            String response = inNextLine();
             if (response.equals("1")) task41();
             else if (response.equals("2")) break;
             // else invalid
@@ -680,7 +680,7 @@ public class Main {
     
     private static String inNextLine() {
         if (isTty) {
-            return in.nextLine();
+            return in2.nextLine();
         }
         String result = bufferedIn.get(0);
         bufferedIn.remove(0);
@@ -693,7 +693,7 @@ public class Main {
         final String INPUT_FILES_PATH = "./testcases/input/";
         final String EXPECTED_FILES_PATH = "./testcases/expected/";
         if (!isTty) {
-            while (in.hasNextLine()) bufferedIn.add(in.nextLine());
+            while (in2.hasNextLine()) bufferedIn.add(in2.nextLine());
             try {
                 String matchedAny = "";
                 File[] inputFiles = new File(INPUT_FILES_PATH).listFiles();
@@ -738,7 +738,7 @@ public class Main {
             System.out.println("5. None of the above");
             System.out.println("Please enter [1-4]");
             
-            String response = in.nextLine();
+            String response = inNextLine();
             if (response.equals("1")) task1();
             else if (response.equals("2")) task2();
             else if (response.equals("3")) task3();
@@ -754,8 +754,8 @@ public class Main {
     
     public static void main(String[] args) {
         try {
-            in = new Scanner(System.in);
-            prepare();
+            in2 = new Scanner(System.in);
+            // prepare();
             
             String dbAddress = "jdbc:mysql://projgw.cse.cuhk.edu.hk:2633/group33";
             String dbUsername = "Group33";
