@@ -82,7 +82,7 @@ public class Main {
         PreparedStatement createRequests = conn.prepareStatement(
             "CREATE TABLE requests (" +
                 "id int NOT NULL," +
-                "passengers_id int NOT NULL," +
+                "passenger_id int NOT NULL," +
                 "start_location varchar(255) NOT NULL," +
                 "destination varchar(255) NOT NULL," +
                 "model varchar(255) NOT NULL," +
@@ -90,7 +90,7 @@ public class Main {
                 "taken boolean NOT NULL," +
                 "driving_years int NOT NULL," +
                 "PRIMARY KEY (id)," +
-                "FOREIGN KEY (passengers_id) REFERENCES passengers(id) ON DELETE CASCADE," +
+                "FOREIGN KEY (passenger_id) REFERENCES passengers(id) ON DELETE CASCADE," +
                 "FOREIGN KEY (start_location) REFERENCES taxi_stops(name) ON DELETE CASCADE," +
                 "FOREIGN KEY (destination) REFERENCES taxi_stops(name) ON DELETE CASCADE," +
                 "CONSTRAINT c_id CHECK (id > 0)," +
