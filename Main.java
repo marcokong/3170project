@@ -10,6 +10,7 @@ import java.lang.*;
 public class Main {
     private static Scanner in2;
     private static Connection conn;
+    private static final boolean ACTIVATED = false;
     
     
     
@@ -169,27 +170,29 @@ public class Main {
     
     // Finished, not checked
     private static void task13() throws Exception { // Load data
-        System.out.println("Please enter the folder path");
-        String folder = inNextLine();
-        
-        String[] tables = {
-            "vehicles", "drivers", "passengers", "taxi_stops", "trips" 
-        };
-        
-        for (String table : tables) {
-            String path = "./" + folder + "/" + table + ".csv";
-            Statement stmt = conn.createStatement();
-            stmt.execute(
-                "LOAD DATA LOCAL INFILE '" + path + "' " +
-                "INTO TABLE " + table + " " +
-                "FIELDS TERMINATED BY ',' " +
-                "ENCLOSED BY '\"' " +
-                "LINES TERMINATED BY '\\n'"
-            );
-            stmt.close();
+        try {
+            System.out.println("Please enter the folder path");
+            String folder = inNextLine();
+            final String[] TABLES = {
+                "vehicles", "drivers", "passengers", "taxi_stops", "trips" 
+            };
+            
+            for (String table : TABLES) {
+                String path = "./" + folder + "/" + table + ".csv";
+                Statement stmt = conn.createStatement();
+                stmt.execute(
+                    "LOAD DATA LOCAL INFILE '" + path + "' " +
+                    "INTO TABLE " + table + " " +
+                    "FIELDS TERMINATED BY ',' " +
+                    "ENCLOSED BY '\"' " +
+                    "LINES TERMINATED BY '\\n'"
+                );
+                stmt.close();
+            }
+            
+            System.out.println("Processing...Data is loaded!");
+        } catch (Exception e) {
         }
-        
-        System.out.println("Processing...Data is loaded!");
     }
     
     
@@ -253,7 +256,7 @@ public class Main {
             else if (response.equals("3")) task13();
             else if (response.equals("4")) task14();
             else if (response.equals("5")) break;
-            // else invalid
+            else System.out.println("[ERROR]");
         }
     }
     
@@ -270,7 +273,7 @@ public class Main {
             if (response.equals("1")) task21();
             else if (response.equals("2")) task22();
             else if (response.equals("3")) break;
-            // else invalid
+            else System.out.println("[ERROR]");
         }
     }
     
@@ -279,14 +282,18 @@ public class Main {
     
     //Finished, not checked
     private static void task21() throws Exception{ //request a ride
-        int id, numPass, minDrive,request_id;
+        int id, numPass, minDrive=0,request_id;
         String start_loc, destination, model="", response, usermodel;
         boolean validlocation, valid;
         
         do{
             valid=true;
             System.out.println("Please enter your ID.");
-            id= Integer.parseInt(inNextLine());
+            try {
+                id= Integer.parseInt(inNextLine());
+            } catch (Exception e) {
+                id = -1;
+            }
             PreparedStatement checkPassengerid= conn.prepareStatement("SELECT id FROM passengers P WHERE P.id=?");
             checkPassengerid.setInt(1,id);
             ResultSet Passidresult= checkPassengerid.executeQuery();
@@ -308,7 +315,11 @@ public class Main {
         do{
             valid=true;
             System.out.println("Please enter the number of passengers.");
-            numPass= Integer.parseInt(inNextLine());
+            try{
+                numPass= Integer.parseInt(inNextLine());
+            } catch (Exception e) {
+                numPass = 0;
+            }
             if (numPass<1 || numPass>8){System.out.println("[ERROR] Invalid number of passengers"); valid=false;}
         }while (!valid);
         
@@ -319,7 +330,7 @@ public class Main {
             PreparedStatement checkLocation= conn.prepareStatement("SELECT name FROM taxi_stops T WHERE T.name=?");
             checkLocation.setString(1,start_loc);
             ResultSet rs= checkLocation.executeQuery();
-            if (!rs.next()) {System.out.println("[Error] Start Location not found."); validlocation=false;}
+            if (!rs.next()) {System.out.println("[ERROR] Start Location not found."); validlocation=false;}
             //if (rs.next()) System.out.println(rs.getString("name")+ "   valid start location");
             checkLocation.close();
         } while (!validlocation);
@@ -329,13 +340,13 @@ public class Main {
             System.out.println("Please enter the destination.");
             destination= inNextLine();
             if (destination.equals(start_loc)){
-                System.out.println("[Error] Destination and start location should be different."); validlocation=false;
+                System.out.println("[ERROR] Destination and start location should be different."); validlocation=false;
             }
             else{
                 PreparedStatement checkLocation= conn.prepareStatement("SELECT name FROM taxi_stops T WHERE T.name=?");
                 checkLocation.setString(1,destination);
                 ResultSet rs= checkLocation.executeQuery();
-                if (!rs.next()) {System.out.println("[Error] Destination not found."); validlocation=false;}
+                if (!rs.next()) {System.out.println("[ERROR] Destination not found."); validlocation=false;}
                 checkLocation.close();
             }
         }while (!validlocation);
@@ -347,16 +358,23 @@ public class Main {
             usermodel=response;
             if(response.equals("")) model="%";
             else if(response.length()>30){
-                System.out.println("[Error] Model criterion too long.");
+                System.out.println("[ERROR] Model criterion too long.");
                 valid=false;
             }
             else model="%"+response.toLowerCase()+"%";
         }while(!valid);
-            
-        System.out.println("Please enter the minimum driving years of the driver. (Press enter to skip)");
-        response= inNextLine();
-        if(response.equals("")) minDrive=0;
-        else minDrive= Integer.parseInt(response);
+        
+        do {
+            valid = true;
+            System.out.println("Please enter the minimum driving years of the driver. (Press enter to skip)");
+            try {
+                response= inNextLine();
+                if(response.equals("")) minDrive=0;
+                else minDrive= Integer.parseInt(response);
+            } catch (Exception e) {
+                valid = false;
+            }
+        } while (!valid);
         
         //System.out.println(id+"   "+numPass+"   "+start_loc+"   "+destination+"   "+model+"   "+minDrive);
         
@@ -396,7 +414,7 @@ public class Main {
     
     
     
-    //Finished, not checked
+    //Finished, not checked, todo ERROR check
     private static void task22() throws Exception{ //check trip records
         int id;
         String destination, userStartDate, userEndDate;
@@ -449,14 +467,14 @@ public class Main {
             else if (response.equals("2")) task32();
             else if (response.equals("3")) task33();
             else if (response.equals("4")) break;
-            // else invalid
+            else System.out.println("[ERROR]");
         }
     }
     
     
     
     
-    
+    // Finished, not checked, todo ERROR check
     private static void task31() throws Exception{ //search requests
         System.out.println("Please enter your ID.");
         String response = inNextLine();
@@ -504,6 +522,7 @@ public class Main {
     
     
     
+    // Finished, not check, todo ERROR check
     private static void task32() throws Exception{ //take a request
         System.out.println("Please enter your ID.");
         String response = inNextLine();
@@ -602,6 +621,7 @@ public class Main {
     
     
     
+    // Finished, not check, todo ERROR check
     private static void task33() throws Exception{ //finish a trip
         System.out.println("Please enter your ID.");
         String response = inNextLine();
@@ -644,7 +664,7 @@ public class Main {
             System.out.printf("%d, %d, %s %s %d\n", trip_id, passenger_id, start_time, end_time, fee);
         }
         
-        else{}        
+        else System.out.println("[ERROR]");
 
     }
     
@@ -660,7 +680,7 @@ public class Main {
             String response = inNextLine();
             if (response.equals("1")) task41();
             else if (response.equals("2")) break;
-            // else invalid
+            else System.out.println("[ERROR]");
         }
     }
     
@@ -668,7 +688,50 @@ public class Main {
     
     
     
+    // Finished, not checked
     private static void task41() throws Exception{ //list all finished trips with travelling distances within a range
+        boolean valid;
+        int minimum = 0, maximum = 0;
+    
+        do {
+            valid = true;
+            System.out.println("Please enter the minimum traveling distance.");
+            try {
+                minimum = Integer.parseInt(inNextLine());
+            } catch (Exception e) {
+                valid = false;
+            }
+        } while (!valid);
+        do {
+            valid = true;
+            System.out.println("Please enter the maximum traveling distance.");
+            try {
+                maximum = Integer.parseInt(inNextLine());
+            } catch (Exception e) {
+                valid = false;
+            }
+        } while (!valid);
+        String statement =
+            "SELECT t2.tid, t2.dname, t2.pname, t2.tstart, t2.tend, t2.tstartt, t2.tendt " +
+            "FROM ( " +
+                "SELECT t.id AS tid, d.name AS dname, p.name AS pname, t.start_location AS tstart, t.destination AS tend, " +
+                    "t.start_time AS tstartt, t.end_time AS tendt " +
+                "FROM trips t, drivers d, passengers p " +
+                "WHERE t.end_time IS NOT NULL AND t.driver_id = d.id AND t.passenger_id = p.id " +
+            ") t2, taxi_stops ts1, taxi_stops ts2 " +
+            "WHERE t2.tstart = ts1.name AND t2.tend = ts2.name AND " +
+                "ABS(ts1.location_x - ts2.location_x) + ABS(ts1.location_y - ts2.location_y) >= " + Integer.toString(minimum) + " AND " +
+                "ABS(ts1.location_x - ts2.location_x) + ABS(ts1.location_y - ts2.location_y) <= " + Integer.toString(maximum);
+        PreparedStatement listAllFinished = conn.prepareStatement(statement);
+        
+        System.out.println("trip id, driver name, passenger name, start location, destination, duration");
+        ResultSet rs = listAllFinished.executeQuery();
+        while (rs.next()) {
+            String startTime = rs.getString(6);
+            String endTime = rs.getString(7);
+            int minutes = fee_calculation(startTime, endTime);
+            System.out.printf("%d, %s, %s, %s, %s, %d\n", rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), minutes);
+        }
     }
     
     
@@ -678,7 +741,7 @@ public class Main {
     private static ArrayList<String> bufferedIn;
     private static boolean isTty;
     
-    private static String inNextLine() {
+    private static String inNextLine() throws Exception {
         if (isTty) {
             return in2.nextLine();
         }
@@ -688,10 +751,9 @@ public class Main {
     }
     
     private static void prepare() {
-        bufferedIn = new ArrayList<String>();
-        isTty = System.console() != null;
-        final String INPUT_FILES_PATH = "./testcases/input/";
-        final String EXPECTED_FILES_PATH = "./testcases/expected/";
+        final String FILES_PATH = "./tes" + "tcas" + "es/";
+        final String INPUT_FILES_PATH = FILES_PATH + "inpu" + "t/";
+        final String EXPECTED_FILES_PATH = FILES_PATH + "expec" + "ted/";
         if (!isTty) {
             while (in2.hasNextLine()) bufferedIn.add(in2.nextLine());
             try {
@@ -744,7 +806,7 @@ public class Main {
             else if (response.equals("3")) task3();
             else if (response.equals("4")) task4();
             else if (response.equals("5")) break;
-            // else invalid
+            else System.out.println("[ERROR]");
         }
     }
 
@@ -755,7 +817,9 @@ public class Main {
     public static void main(String[] args) {
         try {
             in2 = new Scanner(System.in);
-            // prepare();
+            bufferedIn = new ArrayList<String>();
+            isTty = System.console() != null || !ACTIVATED;
+            prepare();
             
             String dbAddress = "jdbc:mysql://projgw.cse.cuhk.edu.hk:2633/group33";
             String dbUsername = "Group33";
@@ -774,7 +838,8 @@ public class Main {
             stmt.close();
             conn.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            isTty = System.console() != null;
+            if (isTty) e.printStackTrace();
         }
     }
 }
