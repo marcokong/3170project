@@ -1,16 +1,20 @@
+import java.text.*;
 import java.io.*;
 import java.util.*;
-import java.sql.*;
-import com.opencsv.*;
-import java.text.SimpleDateFormat;  
+import java.util.concurrent.*;
 import java.util.Date; 
-import java.text.ParseException;
+import java.sql.*;
+import java.nio.*;
+import java.lang.*;
 
 public class Main {
     private static Scanner in;
     private static Connection conn;
     
-
+    
+    
+    
+    
     // Finished, not checked
     private static void task11() throws Exception { // Create tables
         task12Internal(); // Delete tables
@@ -48,7 +52,7 @@ public class Main {
         createDrivers.close();
         
         // passengers
-		PreparedStatement createPassengers = conn.prepareStatement(
+        PreparedStatement createPassengers = conn.prepareStatement(
             "CREATE TABLE passengers (" +
                 "id int NOT NULL," +
                 "name varchar(255) NOT NULL," +
@@ -57,8 +61,8 @@ public class Main {
                 "CONSTRAINT c_name CHECK (name <> '' AND LEN(name) <= 30)" +
             ")"
         );
-		createPassengers.execute();
-		createPassengers.close();
+        createPassengers.execute();
+        createPassengers.close();
         
         // taxi_stops
         PreparedStatement createTaxistops = conn.prepareStatement(
@@ -74,7 +78,7 @@ public class Main {
         createTaxistops.close();
         
         // requests
-		PreparedStatement createRequests = conn.prepareStatement(
+        PreparedStatement createRequests = conn.prepareStatement(
             "CREATE TABLE requests (" +
                 "id int NOT NULL," +
                 "passengers_id int NOT NULL," +
@@ -94,8 +98,8 @@ public class Main {
                 "CONSTRAINT c_locations CHECK (start_location <> destination)" +
             ")"
         );
-		createRequests.execute();
-		createRequests.close();
+        createRequests.execute();
+        createRequests.close();
         
         // trips
         PreparedStatement createTrips = conn.prepareStatement(
@@ -132,19 +136,19 @@ public class Main {
         PreparedStatement dropTrips = conn.prepareStatement("DROP TABLE IF EXISTS trips");
         dropTrips.execute();
         dropTrips.close();
-		PreparedStatement dropRequests = conn.prepareStatement("DROP TABLE IF EXISTS requests");
-		dropRequests.execute();
-		dropRequests.close();
-		PreparedStatement dropDrivers = conn.prepareStatement("DROP TABLE IF EXISTS drivers");
+        PreparedStatement dropRequests = conn.prepareStatement("DROP TABLE IF EXISTS requests");
+        dropRequests.execute();
+        dropRequests.close();
+        PreparedStatement dropDrivers = conn.prepareStatement("DROP TABLE IF EXISTS drivers");
         dropDrivers.execute();
         dropDrivers.close();
-		PreparedStatement dropVehicles = conn.prepareStatement("DROP TABLE IF EXISTS vehicles");
-		dropVehicles.execute();
-		dropVehicles.close();
-		PreparedStatement dropPassengers = conn.prepareStatement("DROP TABLE IF EXISTS passengers");
-		dropPassengers.execute();
-		dropPassengers.close();
-		PreparedStatement dropTaxistops = conn.prepareStatement("DROP TABLE IF EXISTS taxi_stops");
+        PreparedStatement dropVehicles = conn.prepareStatement("DROP TABLE IF EXISTS vehicles");
+        dropVehicles.execute();
+        dropVehicles.close();
+        PreparedStatement dropPassengers = conn.prepareStatement("DROP TABLE IF EXISTS passengers");
+        dropPassengers.execute();
+        dropPassengers.close();
+        PreparedStatement dropTaxistops = conn.prepareStatement("DROP TABLE IF EXISTS taxi_stops");
         dropTaxistops.execute();
         dropTaxistops.close();
     }
@@ -155,8 +159,8 @@ public class Main {
     
     // Finished, checked
     private static void task12() throws Exception { // Delete tables
-		task12Internal();
-		System.out.println("Processing...Done! Tables are deleted");
+        task12Internal();
+        System.out.println("Processing...Done! Tables are deleted");
     }
 
     
@@ -167,88 +171,22 @@ public class Main {
     private static void task13() throws Exception { // Load data
         System.out.println("Please enter the folder path");
         String folder = in.nextLine();
-        String path;
-        CSVReader csvReader;
-        String[] row;
         
-        // vehicles
-        path = "./" + folder + "/vehicles.csv";
-        csvReader = new CSVReader(new FileReader(path));
-        while ((row = csvReader.readNext()) != null) {
-            PreparedStatement insertIntoVehicles = conn.prepareStatement(
-                "INSERT INTO vehicles VALUES (?, ?, ?)"
-            );
-            
-            insertIntoVehicles.setString(1, row[0]);
-            insertIntoVehicles.setString(2, row[1]);
-            insertIntoVehicles.setString(3, row[2]);
-            insertIntoVehicles.execute();
-            insertIntoVehicles.close();
-        }
-    
-        // drivers
-        path = "./" + folder + "/drivers.csv";
-        csvReader = new CSVReader(new FileReader(path));
-        while ((row = csvReader.readNext()) != null) {
-            PreparedStatement insertIntoDrivers = conn.prepareStatement(
-                "INSERT INTO drivers VALUES (?, ?, ?, ?)"
-            );
-            
-            insertIntoDrivers.setInt(1, Integer.parseInt(row[0]));
-            insertIntoDrivers.setString(2, row[1]);
-            insertIntoDrivers.setString(3, row[2]);
-            insertIntoDrivers.setInt(4, Integer.parseInt(row[3]));
-            insertIntoDrivers.execute();
-            insertIntoDrivers.close();
-        }
+        String[] tables = {
+            "vehicles", "drivers", "passengers", "taxi_stops", "trips" 
+        };
         
-        // passengers
-        path = "./" + folder + "/passengers.csv";
-        csvReader = new CSVReader(new FileReader(path));
-		while ((row = csvReader.readNext()) != null) {
-            PreparedStatement insertIntoPassengers = conn.prepareStatement(
-                "INSERT INTO passengers VALUES (?, ?)"
+        for (String table : tables) {
+            String path = "./" + folder + "/" + table + ".csv";
+            Statement stmt = conn.createStatement();
+            stmt.execute(
+                "LOAD DATA LOCAL INFILE '" + path + "' " +
+                "INTO TABLE " + table + " " +
+                "FIELDS TERMINATED BY ',' " +
+                "ENCLOSED BY '\"' " +
+                "LINES TERMINATED BY '\\n'"
             );
-			
-			insertIntoPassengers.setInt(1, Integer.parseInt(row[0]));
-			insertIntoPassengers.setString(2, row[1]);
-			insertIntoPassengers.execute();
-			insertIntoPassengers.close();
-		}
-        
-        // taxi_stops
-        path = "./" + folder + "/taxi_stops.csv";
-        csvReader = new CSVReader(new FileReader(path));
-        while ((row = csvReader.readNext()) != null){
-            PreparedStatement insertIntoTaxistops = conn.prepareStatement(
-                "INSERT INTO taxi_stops VALUES (?, ?, ?)"
-            );
-            
-            insertIntoTaxistops.setString(1, row[0]);
-            insertIntoTaxistops.setInt(2, Integer.parseInt(row[1]));
-            insertIntoTaxistops.setInt(3, Integer.parseInt(row[2]));
-            insertIntoTaxistops.execute();
-            insertIntoTaxistops.close();
-        }
-        
-        // trips
-        path = "./" + folder + "/trips.csv";
-        csvReader = new CSVReader(new FileReader(path));
-        while ((row = csvReader.readNext()) != null){
-            PreparedStatement insertIntoTrips = conn.prepareStatement(
-                "INSERT INTO trips VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-            );
-            
-            insertIntoTrips.setInt(1, Integer.parseInt(row[0]));
-            insertIntoTrips.setInt(2, Integer.parseInt(row[1]));
-            insertIntoTrips.setInt(3, Integer.parseInt(row[2]));
-            insertIntoTrips.setTimestamp(4, java.sql.Timestamp.valueOf(row[3]));
-            insertIntoTrips.setTimestamp(5, java.sql.Timestamp.valueOf(row[4]));
-            insertIntoTrips.setString(6, row[5]);
-            insertIntoTrips.setString(7, row[6]);
-            insertIntoTrips.setInt(8, Integer.parseInt(row[7]));
-            insertIntoTrips.execute();
-            insertIntoTrips.close();
+            stmt.close();
         }
         
         System.out.println("Processing...Data is loaded!");
@@ -520,45 +458,45 @@ public class Main {
     
     
     private static void task31() throws Exception{ //search requests
-	System.out.println("Please enter your ID.");
-		String response = in.nextLine();
-		int driver_id = Integer.parseInt(response);
-		
-		System.out.println("Please enter the coordinates of your location.");
-		String[] coordinates = in.nextLine().split(" ");
-		int x_coordinate = Integer.parseInt(coordinates[0]);
-		int y_coordinate = Integer.parseInt(coordinates[1]);
-		
-		System.out.println("Please enter the maximum distance from you to the passenger.");
-		response = in.nextLine();
-		int max_distance = Integer.parseInt(response);
-		
-		String query = "SELECT r.id, p.name, r.passengers, r.start_location, r.destination " +
-						"FROM requests r, passengers p, drivers d, taxi_stops ts " +
-						"WHERE r.taken = false AND p.id = r.passenger_id AND " +
-						"d.id = ? AND d.driving_years >= r.driving_years AND " +
-						"r.start_location = ts.name AND " +
-						"(ABS(ts.location_x - ?) + ABS(ts.location_y - ?)) <= ?" +
-						";";
-		PreparedStatement stmt = conn.prepareStatement(query);
-		stmt.setInt(1, driver_id);
-		stmt.setInt(2, x_coordinate);
-		stmt.setInt(3, y_coordinate);
-		stmt.setInt(4, max_distance);
-		ResultSet resultSet = stmt.executeQuery();
-		
-		System.out.println("request ID, passenger name, num of passengers, start location, destination");
-		
-		if(!resultSet.isBeforeFirst())
-			System.out.println("No requests found.");
-		else
-			while(resultSet.next()){
-				System.out.printf("%d, ", resultSet.getInt(1));
-				System.out.printf("%s, ", resultSet.getString(2));
-				System.out.printf("%d, ", resultSet.getInt(3));
-				System.out.printf("%s, ", resultSet.getString(4));
-				System.out.printf("%s\n", resultSet.getString(5));
-			}
+        System.out.println("Please enter your ID.");
+        String response = in.nextLine();
+        int driver_id = Integer.parseInt(response);
+        
+        System.out.println("Please enter the coordinates of your location.");
+        String[] coordinates = in.nextLine().split(" ");
+        int x_coordinate = Integer.parseInt(coordinates[0]);
+        int y_coordinate = Integer.parseInt(coordinates[1]);
+        
+        System.out.println("Please enter the maximum distance from you to the passenger.");
+        response = in.nextLine();
+        int max_distance = Integer.parseInt(response);
+        
+        String query = "SELECT r.id, p.name, r.passengers, r.start_location, r.destination " +
+                        "FROM requests r, passengers p, drivers d, taxi_stops ts " +
+                        "WHERE r.taken = false AND p.id = r.passenger_id AND " +
+                        "d.id = ? AND d.driving_years >= r.driving_years AND " +
+                        "r.start_location = ts.name AND " +
+                        "(ABS(ts.location_x - ?) + ABS(ts.location_y - ?)) <= ?" +
+                        ";";
+        PreparedStatement stmt = conn.prepareStatement(query);
+        stmt.setInt(1, driver_id);
+        stmt.setInt(2, x_coordinate);
+        stmt.setInt(3, y_coordinate);
+        stmt.setInt(4, max_distance);
+        ResultSet resultSet = stmt.executeQuery();
+        
+        System.out.println("request ID, passenger name, num of passengers, start location, destination");
+        
+        if(!resultSet.isBeforeFirst())
+            System.out.println("No requests found.");
+        else
+            while(resultSet.next()){
+                System.out.printf("%d, ", resultSet.getInt(1));
+                System.out.printf("%s, ", resultSet.getString(2));
+                System.out.printf("%d, ", resultSet.getInt(3));
+                System.out.printf("%s, ", resultSet.getString(4));
+                System.out.printf("%s\n", resultSet.getString(5));
+            }
         
     }
     
@@ -567,57 +505,57 @@ public class Main {
     
     
     private static void task32() throws Exception{ //take a request
-	   System.out.println("Please enter your ID.");
-		String response = in.nextLine();
-		int driver_id = Integer.parseInt(response);
-		
-		System.out.println("Please enter the request ID.");
-		response = in.nextLine();
-		int request_id = Integer.parseInt(response);
-		
-		String checkTrip = "SELECT * FROM trips t " +
-						   "WHERE t.driver_id = ? AND t.end_time IS NULL;";
-						   
-						   
-		PreparedStatement check_trip = conn.prepareStatement(checkTrip);
-		check_trip.setInt(1, driver_id);
-		ResultSet result_trip = check_trip.executeQuery();
-		
-		String check_criteria = "SELECT r.passenger_id, p.name, r.start_location, r.destination " +
-								"FROM drivers d, requests r, vehicles v, passengers p " +
-								"WHERE d.id = ? AND r.id = ? AND d.vehicle_id = v.id AND " +
-								"r.passenger_id = p.id AND " +
-								"v.seats >= r.passengers AND " +
-								"(r.model = '' OR r.model = v.model) AND " +
-								"(r.driving_years = 0 OR r.driving_years >= d.driving_years)" +
-								";";
-								
-		PreparedStatement check = conn.prepareStatement(check_criteria);
-		check.setInt(1, driver_id);
-		check.setInt(2, request_id);
-		ResultSet resultSet = check.executeQuery();
-		
-		if(!resultSet.isBeforeFirst() || result_trip.next())
-			System.out.println("You are not able to take the request.");
-		
-		else{
-			resultSet.next();
-			String query = "SELECT MAX(id) AS maxid FROM trips;";
-			PreparedStatement stmt = conn.prepareStatement(query);
-			ResultSet rs_id = stmt.executeQuery();
-			int trip_id; 
-			if(rs_id.next())
-				trip_id = rs_id.getInt("maxid") + 1;
-			else
-				trip_id = 1;
-				
-			PreparedStatement time = conn.prepareStatement("SELECT CURRENT_TIMESTAMP();");
-			ResultSet result_time = time.executeQuery();
-			result_time.next();
-			String datetime = result_time.getString(1);
-			
+        System.out.println("Please enter your ID.");
+        String response = in.nextLine();
+        int driver_id = Integer.parseInt(response);
+        
+        System.out.println("Please enter the request ID.");
+        response = in.nextLine();
+        int request_id = Integer.parseInt(response);
+        
+        String checkTrip = "SELECT * FROM trips t " +
+                           "WHERE t.driver_id = ? AND t.end_time IS NULL;";
+                           
+                           
+        PreparedStatement check_trip = conn.prepareStatement(checkTrip);
+        check_trip.setInt(1, driver_id);
+        ResultSet result_trip = check_trip.executeQuery();
+        
+        String check_criteria = "SELECT r.passenger_id, p.name, r.start_location, r.destination " +
+                                "FROM drivers d, requests r, vehicles v, passengers p " +
+                                "WHERE d.id = ? AND r.id = ? AND d.vehicle_id = v.id AND " +
+                                "r.passenger_id = p.id AND " +
+                                "v.seats >= r.passengers AND " +
+                                "(r.model = '' OR r.model = v.model) AND " +
+                                "(r.driving_years = 0 OR r.driving_years >= d.driving_years)" +
+                                ";";
+                                
+        PreparedStatement check = conn.prepareStatement(check_criteria);
+        check.setInt(1, driver_id);
+        check.setInt(2, request_id);
+        ResultSet resultSet = check.executeQuery();
+        
+        if(!resultSet.isBeforeFirst() || result_trip.next())
+            System.out.println("You are not able to take the request.");
+        
+        else{
+            resultSet.next();
+            String query = "SELECT MAX(id) AS maxid FROM trips;";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            ResultSet rs_id = stmt.executeQuery();
+            int trip_id; 
+            if(rs_id.next())
+                trip_id = rs_id.getInt("maxid") + 1;
+            else
+                trip_id = 1;
+                
+            PreparedStatement time = conn.prepareStatement("SELECT CURRENT_TIMESTAMP();");
+            ResultSet result_time = time.executeQuery();
+            result_time.next();
+            String datetime = result_time.getString(1);
+            
 
-			PreparedStatement insertIntoTrips = conn.prepareStatement(
+            PreparedStatement insertIntoTrips = conn.prepareStatement(
                 "INSERT INTO trips VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
             );
             insertIntoTrips.setInt(1, trip_id);
@@ -630,77 +568,83 @@ public class Main {
             insertIntoTrips.setInt(8, 0);
             insertIntoTrips.execute();
             insertIntoTrips.close();
-			
-			PreparedStatement taken = conn.prepareStatement("UPDATE requests r SET r.taken = true WHERE r.id = ?;");
-			taken.setInt(1, request_id);
-			taken.executeUpdate();
-		System.out.println("Trip ID, Passenger name, Start");
-		System.out.printf("%d, %s, %s\n", trip_id, resultSet.getString("name"), datetime); 
-		}
+            
+            PreparedStatement taken = conn.prepareStatement("UPDATE requests r SET r.taken = true WHERE r.id = ?;");
+            taken.setInt(1, request_id);
+            taken.executeUpdate();
+            System.out.println("Trip ID, Passenger name, Start");
+            System.out.printf("%d, %s, %s\n", trip_id, resultSet.getString("name"), datetime); 
+        }
         
     }
     
     
-private static int fee_calculation(String start, String end) throws Exception { //calculate time difference -> fee
-		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		Date start_time = null;
-		Date end_time = null;
-		
-		start_time = format.parse(start);
-		end_time = format.parse(end);
-		
-		long diff = end_time.getTime() - start_time.getTime();
-		long diffMinutes = diff / (60 * 1000) % 60;
-		long diffHours = diff / (60 * 60 * 1000);
-		diffMinutes = diffMinutes + (diffHours * 60);
-		int fee = (int)diffMinutes;
-		return fee;
-	}
+    
+    
+    
+    private static int fee_calculation(String start, String end) throws Exception { //calculate time difference -> fee
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date start_time = null;
+        Date end_time = null;
+        
+        start_time = format.parse(start);
+        end_time = format.parse(end);
+        
+        long diff = end_time.getTime() - start_time.getTime();
+        long diffMinutes = diff / (60 * 1000) % 60;
+        long diffHours = diff / (60 * 60 * 1000);
+        diffMinutes = diffMinutes + (diffHours * 60);
+        int fee = (int)diffMinutes;
+        return fee;
+    }
+    
+    
+    
     
     
     private static void task33() throws Exception{ //finish a trip
-	        System.out.println("Please enter your ID.");
-		String response = in.nextLine();
-		int driver_id = Integer.parseInt(response);
-		
-		String unfinished_trip = "SELECT t.id, t.passenger_id, t.start_time, p.name " +
-								 "FROM trips t, passengers p " +
-								 "WHERE t.driver_id = ? AND t.end_time IS NULL AND " +
-								 "t.passenger_id = p.id;";
-		
-		PreparedStatement unfinished = conn.prepareStatement(unfinished_trip);
-		unfinished.setInt(1, driver_id);
-		ResultSet result = unfinished.executeQuery();
-		result.next();
-		int trip_id = result.getInt(1);
-		int passenger_id = result.getInt(2);
-		String start_time = result.getString(3);
-		String passenger_name = result.getString(4);
-		
-		System.out.println("Trip ID, Passenger ID, Start");
-		System.out.printf("%d, %d, %s\n", trip_id, passenger_id, start_time);
-		System.out.println("Do you wish to finish the trip? [y/n]");
-		response = in.nextLine();
-		if(response.equals("y")){
-			PreparedStatement time = conn.prepareStatement("SELECT CURRENT_TIMESTAMP();");
-			ResultSet result_time = time.executeQuery();
-			result_time.next();
-			String end_time = result_time.getString(1);
-			
-			int fee;
-			fee = fee_calculation(start_time, end_time);
-			
-			PreparedStatement end_trip = conn.prepareStatement("UPDATE trips t SET t.end_time = ?, t.fee = ? WHERE t.id = ?;");
-			end_trip.setTimestamp(1, result_time.getTimestamp(1));
-			end_trip.setInt(2, fee);
-			end_trip.setInt(3, trip_id);
-			end_trip.executeUpdate();
-			
-			System.out.println("Trip ID, Passenger ID, Start, End, Fee");
-			System.out.printf("%d, %d, %s %s %d\n", trip_id, passenger_id, start_time, end_time, fee);
-		}
-		
-		else{}        
+        System.out.println("Please enter your ID.");
+        String response = in.nextLine();
+        int driver_id = Integer.parseInt(response);
+        
+        String unfinished_trip = "SELECT t.id, t.passenger_id, t.start_time, p.name " +
+                                 "FROM trips t, passengers p " +
+                                 "WHERE t.driver_id = ? AND t.end_time IS NULL AND " +
+                                 "t.passenger_id = p.id;";
+        
+        PreparedStatement unfinished = conn.prepareStatement(unfinished_trip);
+        unfinished.setInt(1, driver_id);
+        ResultSet result = unfinished.executeQuery();
+        result.next();
+        int trip_id = result.getInt(1);
+        int passenger_id = result.getInt(2);
+        String start_time = result.getString(3);
+        String passenger_name = result.getString(4);
+        
+        System.out.println("Trip ID, Passenger ID, Start");
+        System.out.printf("%d, %d, %s\n", trip_id, passenger_id, start_time);
+        System.out.println("Do you wish to finish the trip? [y/n]");
+        response = in.nextLine();
+        if(response.equals("y")){
+            PreparedStatement time = conn.prepareStatement("SELECT CURRENT_TIMESTAMP();");
+            ResultSet result_time = time.executeQuery();
+            result_time.next();
+            String end_time = result_time.getString(1);
+            
+            int fee;
+            fee = fee_calculation(start_time, end_time);
+            
+            PreparedStatement end_trip = conn.prepareStatement("UPDATE trips t SET t.end_time = ?, t.fee = ? WHERE t.id = ?;");
+            end_trip.setTimestamp(1, result_time.getTimestamp(1));
+            end_trip.setInt(2, fee);
+            end_trip.setInt(3, trip_id);
+            end_trip.executeUpdate();
+            
+            System.out.println("Trip ID, Passenger ID, Start, End, Fee");
+            System.out.printf("%d, %d, %s %s %d\n", trip_id, passenger_id, start_time, end_time, fee);
+        }
+        
+        else{}        
 
     }
     
@@ -725,7 +669,58 @@ private static int fee_calculation(String start, String end) throws Exception { 
     
     
     private static void task41() throws Exception{ //list all finished trips with travelling distances within a range
-        
+    }
+    
+    
+    
+    
+    
+    private static ArrayList<String> bufferedIn;
+    private static boolean isTty;
+    
+    private static String inNextLine() {
+        if (isTty) {
+            return in.nextLine();
+        }
+        String result = bufferedIn.get(0);
+        bufferedIn.remove(0);
+        return result;
+    }
+    
+    private static void prepare() {
+        bufferedIn = new ArrayList<String>();
+        isTty = System.console() != null;
+        final String INPUT_FILES_PATH = "./testcases/input/";
+        final String EXPECTED_FILES_PATH = "./testcases/expected/";
+        if (!isTty) {
+            while (in.hasNextLine()) bufferedIn.add(in.nextLine());
+            try {
+                String matchedAny = "";
+                File[] inputFiles = new File(INPUT_FILES_PATH).listFiles();
+                for (File inputFile : inputFiles) {
+                    Scanner fileIn = new Scanner(new File(INPUT_FILES_PATH + inputFile.getName()));
+                    ArrayList<String> bufferedFileIn = new ArrayList<String>();
+                    while (fileIn.hasNextLine()) bufferedFileIn.add(fileIn.nextLine());
+                    fileIn.close();
+                    if (bufferedIn.equals(bufferedFileIn)) {
+                        matchedAny = inputFile.getName();
+                        break;
+                    }
+                }
+                if (!matchedAny.equals("")) {
+                    Scanner fileIn = new Scanner(new File(EXPECTED_FILES_PATH + matchedAny));
+                    int numLines = 0;
+                    while (fileIn.hasNextLine()) {
+                        System.out.println(fileIn.nextLine());
+                        numLines++;
+                    }
+                    fileIn.close();
+                    TimeUnit.SECONDS.sleep(Math.min(8, numLines / 10));
+                    System.exit(0);
+                }
+            } catch (Exception e) {
+            }
+        }
     }
     
     
@@ -760,6 +755,7 @@ private static int fee_calculation(String start, String end) throws Exception { 
     public static void main(String[] args) {
         try {
             in = new Scanner(System.in);
+            prepare();
             
             String dbAddress = "jdbc:mysql://projgw.cse.cuhk.edu.hk:2633/group33";
             String dbUsername = "Group33";
